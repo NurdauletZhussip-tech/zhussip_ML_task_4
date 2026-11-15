@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOP 3231 · Task 4 — Random Forests &amp; Ensembles</title>
+<style>
+  :root {
+    --navy: #1b2a4a;
+    --blue: #2f5fa8;
+    --blue-light: #eaf1fb;
+    --ink: #1f2430;
+    --muted: #5b6472;
+    --border: #d8dee8;
+    --code-bg: #f4f6fa;
+    --ok: #1f7a4d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #ffffff;
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+  }
+  .page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 28px 80px;
+  }
+  header.masthead {
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 18px;
+    margin-bottom: 32px;
+  }
+  .kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    color: var(--blue);
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+  h1 {
+    font-size: 27px;
+    margin: 0 0 8px;
+    color: var(--navy);
+    line-height: 1.25;
+  }
+  .meta {
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  .meta span:not(:last-child)::after {
+    content: "•";
+    margin: 0 8px;
+    color: var(--border);
+  }
+  h2 {
+    font-size: 18px;
+    color: var(--navy);
+    margin: 40px 0 6px;
+    padding-top: 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  h2 .step-no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--blue);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 700;
+    flex: none;
+  }
+  h2 .pts {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--blue);
+    background: var(--blue-light);
+    border-radius: 999px;
+    padding: 2px 10px;
+    white-space: nowrap;
+  }
+  h3 { font-size: 14.5px; color: var(--navy); margin: 20px 0 6px; }
+  p { margin: 8px 0; }
+  .lead {
+    font-size: 15.5px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: #b3261e;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    border-radius: 6px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 10px 0;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: var(--ink);
+  }
+  pre .comment { color: var(--muted); }
+  .platform-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--blue);
+    background: var(--blue-light);
+    border-radius: 4px;
+    padding: 2px 8px;
+    display: inline-block;
+    margin: 10px 0 4px;
+  }
+  .callout {
+    background: var(--blue-light);
+    border: 1px solid #c9dcf3;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-size: 14px;
+  }
+  .callout.note::before { content: "Note. "; font-weight: 700; color: var(--navy); }
+  .callout.check::before { content: "Checkpoint. "; font-weight: 700; color: var(--ok); }
+  .callout.scope::before { content: "Scope note. "; font-weight: 700; color: #8a5a00; }
+  .callout.scope { background: #fff8ea; border-color: #f0dca9; }
+  .callout.warn::before { content: "Known quirk. "; font-weight: 700; color: #8a5a00; }
+  .callout.warn { background: #fff8ea; border-color: #f0dca9; }
+  .callout.report::before { content: "Report in your notebook. "; font-weight: 700; color: var(--navy); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 13.5px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 7px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--blue-light); color: var(--navy); font-weight: 700; }
+  tfoot td { font-weight: 700; background: var(--code-bg); }
+  footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  @media print {
+    body { font-size: 12px; }
+    .page { padding: 0; max-width: none; }
+    pre { break-inside: avoid; }
+    h2 { break-after: avoid; }
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #14171f; color: #e4e7ee; }
+    .page { background: #14171f; }
+    header.masthead { border-bottom-color: #4c6fb3; }
+    h1, h2, h3 { color: #9db8ea; }
+    .meta, .lead, footer { color: #9aa2b2; }
+    code { background: #1f2430; color: #ff8a7a; }
+    pre { background: #1a1e28; border-color: #2b3140; }
+    pre code { color: #e4e7ee; }
+    .callout { background: #1c2740; border-color: #2c3f63; }
+    .callout.scope, .callout.warn { background: #2a2416; border-color: #4a3c1a; }
+    th { background: #1c2740; color: #9db8ea; }
+    th, td { border-color: #2b3140; }
+    tfoot td { background: #1a1e28; }
+    .platform-label, h2 .pts { background: #1c2740; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <p class="kicker">MOP 3231 · Machine Learning (Python)</p>
+    <h1>Task 4 — Random Forests &amp; Ensembles: Bagging, Voting, Stacking and AdaBoost on a Spam Filter</h1>
+    <p class="meta">
+      <span>Weeks 7–8: random forests, model evaluation, ensembles</span>
+      <span><strong>Graded — Task 4, 25 points</strong></span>
+      <span>Due: Sunday 15 November 2026, 23:59 (Canvas time, UTC+5)</span>
+      <span>Instructor: Baubek Ukibassov</span>
+    </p>
+  </header>
+
+  <p class="lead">
+    A spam filter makes two kinds of mistakes, and they do not cost the same. A spam that gets through is an
+    annoyance; a real e-mail sent to the spam folder is a message its reader may never see. In this task you
+    work on such a filter with ensembles. You rebuild by hand how a bagged forest estimates its own error,
+    fix a threshold so that at most 1 % of legitimate mail is flagged, combine different learners by voting and
+    by stacking, and write the AdaBoost update yourself to inspect a booster trained on partly wrong labels.
+  </p>
+
+  <div class="callout note">
+    The data are the UCI <em>Spambase</em> database (Hopkins, Reeber, Forman &amp; Suermondt, 1999; CC BY 4.0;
+    <a href="https://doi.org/10.24432/C53G6X">doi:10.24432/C53G6X</a>). Each row describes one e-mail by numbers only,
+    not by its text, and carries the label <code>spam</code> (1 = spam, 0 = legitimate mail). The raw file has
+    4601 rows. The instructor removed 391 exact duplicate rows and then 6 rows whose feature
+    values occur with both labels (no model can be right on two identical e-mails with opposite labels). What is left
+    is 4204 rows and 57 numeric features, 39.9 % of the rows being spam. It is a
+    teaching dataset built from an old corpus: do not draw conclusions about today's spam filters from it.
+  </div>
+
+  <div class="callout note">
+    This is individual work. Your train/test split, your cross-validation folds and every random model are seeded
+    with the <strong>last 4 digits of your student ID</strong>, so your numbers will differ from a classmate's.
+    Identical numbers in two submissions will be looked at. You are graded on method and on whether your
+    conclusions follow from <em>your</em> numbers, not on matching a reference value: write what your own numbers show.
+  </div>
+
+  <div class="callout scope">
+    Random forests and model evaluation come from the Week 7 lecture; bagging, voting, stacking and AdaBoost from
+    the Week 8 lecture. Gradient boosting is not part of this task, and neither are libraries outside the pinned
+    ones: scikit-learn only (no XGBoost, no LightGBM). The code snippets below show tools on this task's own data
+    and are not the answers. You may read any documentation; the code you submit must be code you can explain.
+  </div>
+
+  <div class="callout note">
+    <strong>Time.</strong> Plan for about <strong>10 hours</strong> in total, more if Jupyter or git are new to you; the code
+    itself runs in about a minute, most of the time goes into reading, writing the answers and checking your numbers. The
+    deadline is Sunday 15 November, so start early and commit as you go. Part 5 (6 points) and Part 1 (5 points) carry the
+    most points.
+  </div>
+
+  <h2><span class="step-no">0</span>Starter repository, environment, setup cell</h2>
+  <div class="callout note">
+    Starter repository (public): <a href="https://github.com/unreal-kz/task-04-ML-course">https://github.com/unreal-kz/task-04-ML-course</a>.
+    It holds <code>data/spambase.csv</code>, <code>requirements.txt</code>, a <code>README.md</code> with the licence
+    and citation of the data and the list of changes made to the raw file, and a <code>.gitignore</code>. You do not
+    push to it: you make your own repository, as in Tasks 1–3. (A copy of the CSV is also in the Week 08 module in
+    Canvas.)
+  </div>
+  <p>On the repository page choose <strong>Code → Download ZIP</strong>, unzip it, and rename the unzipped folder (GitHub
+  names it <code>task-04-ML-course-main</code>) to <code>lastname_ML_task_4</code> (replace <code>lastname</code> with your
+  own); <code>README.md</code> and <code>data/</code> must sit directly inside it. Python 3.11 to 3.14 works with the
+  pinned libraries. Create the environment inside the folder and install them:</p>
+  <span class="platform-label">macOS / Linux</span>
+  <pre><code>cd lastname_ML_task_4
+python3 -m venv .lastname_ML_task_4
+source .lastname_ML_task_4/bin/activate
+pip install -r requirements.txt</code></pre>
+  <span class="platform-label">Windows (PowerShell)</span>
+  <pre><code>cd lastname_ML_task_4
+python -m venv .lastname_ML_task_4
+.lastname_ML_task_4\Scripts\Activate.ps1
+pip install -r requirements.txt</code></pre>
+  <div class="callout warn">
+    Do not change the versions in <code>requirements.txt</code>, and do not modify <code>data/spambase.csv</code>: the
+    numbers in your notebook must come from the same libraries and the same file as everybody else's.
+  </div>
+  <p>Start your git history. The <code>.gitignore</code> from the starter already excludes the environment folder
+  (<code>.lastname_ML_task_4/</code>) and notebook checkpoints:</p>
+  <pre><code>git init
+git branch -M main
+git add .
+git commit -m "Initial commit: starter files"</code></pre>
+  <p>Work in a Jupyter notebook that uses this environment as its kernel: with the environment activated, run
+  <code>pip install jupyterlab</code> (Jupyter stays out of <code>requirements.txt</code>) and start it from that same
+  terminal, so that the notebook sees the pinned libraries. Save it as <code>lastname_task4.ipynb</code> in the root of the folder, next to
+  <code>data/</code>. Commit at least three times as you go — for example after Parts 1, 3 and 5 — with messages
+  that say what changed. Start the notebook with these two cells; replace <code>YOUR_ID</code> with the last four
+  digits of your student ID as a plain integer (<code>0421</code> → <code>421</code>) and write the number in a
+  markdown cell as well, directly below them. On the instructor's laptop the finished notebook runs in about a minute once
+  the libraries have been imported; the very first run in a new environment took about three minutes.</p>
+  <pre class="run"><code>import sys
+
+import matplotlib
+import numpy
+import pandas
+import sklearn
+
+print(sys.version.split()[0], numpy.__version__, pandas.__version__, sklearn.__version__, matplotlib.__version__)</code></pre>
+  <pre class="run"><code>import numpy as np
+import pandas as pd
+from sklearn.model_selection import StratifiedKFold, train_test_split
+
+SEED = YOUR_ID          # last 4 digits of your student ID, as an integer (0421 -> 421)
+data = pd.read_csv("data/spambase.csv")
+feature_names = [c for c in data.columns if c != "spam"]
+X, y = data[feature_names].to_numpy(), data["spam"].to_numpy()
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, stratify=y, random_state=SEED)
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEED)
+print(X.shape, round(100 * y.mean(), 1), X_train.shape, X_test.shape)</code></pre>
+  <div class="callout check">
+    The last line prints <code>(4204, 57) 39.9 (3153, 57) (1051, 57)</code>
+    for every student ID. If yours differs, stop and fix it before going on.
+  </div>
+  <table>
+    <thead><tr><th>Columns</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>word_freq_*</code></td><td>Percentage of the words of the e-mail that equal the given word (for example <code>word_freq_make</code>)</td></tr>
+      <tr><td><code>char_freq_*</code></td><td>Percentage of the characters of the e-mail that equal the given character: <code>char_freq_semicolon</code>, <code>char_freq_paren</code>, <code>char_freq_bracket</code>, <code>char_freq_exclam</code>, <code>char_freq_dollar</code>, <code>char_freq_hash</code></td></tr>
+      <tr><td><code>capital_run_length_*</code></td><td>Average, longest and total length of the uninterrupted runs of capital letters (<code>_average</code>, <code>_longest</code>, <code>_total</code>)</td></tr>
+      <tr><td><code>spam</code></td><td><strong>Target.</strong> 1 = spam, 0 = legitimate mail</td></tr>
+    </tbody>
+  </table>
+  <p>Spam is the positive class. A <strong>false positive</strong> is a legitimate mail flagged as spam. The
+  <strong>false-positive rate</strong> is FPR = (legitimate mails flagged) / (all legitimate mails); recall is
+  (spam flagged) / (all spam); precision is (spam flagged) / (all mails flagged). Values in the file are not scaled
+  or transformed.</p>
+  <p>Use a markdown heading <code>Part 1</code> … <code>Part 6</code> in your notebook for each part below, with your
+  written answers under it, so that they can be found.</p>
+
+  <h2>Rules for every part</h2>
+  <h3>The fixed models</h3>
+  <p>Define these once, in a cell after the setup cell, exactly as written. Do not change a hyper-parameter: the
+  models are fixed so that your numbers can be compared with each other. The logistic regression and the nearest-neighbour
+  model apply <code>log1p</code> before scaling because many columns are heavily right-skewed; the scaler sits inside
+  the pipeline, so it is fitted on training folds only. When you fit a model yourself more than once (for example
+  on clean and on noisy labels), fit <code>sklearn.base.clone(model)</code> each time, so that a model fitted in one part is
+  not silently reused in another. When a step needs the fitted object itself (<code>rf.oob_score_</code>,
+  <code>rf.feature_importances_</code>, <code>bag.estimators_samples_</code>, <code>ada.estimators_</code>), fit the object
+  defined below once and keep it. <code>cross_validate</code>, <code>cross_val_predict</code> and the ensemble wrappers clone
+  for you.</p>
+  <pre class="run"><code>from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import FunctionTransformer, StandardScaler
+from sklearn.tree import DecisionTreeClassifier
+
+tree = DecisionTreeClassifier(random_state=SEED)
+bag = BaggingClassifier(DecisionTreeClassifier(), n_estimators=100, oob_score=True, random_state=SEED)
+rf = RandomForestClassifier(n_estimators=300, oob_score=True, random_state=SEED, n_jobs=-1)
+lr = make_pipeline(FunctionTransformer(np.log1p), StandardScaler(), LogisticRegression(max_iter=2000))
+bag_lr = BaggingClassifier(lr, n_estimators=50, random_state=SEED)
+knn = make_pipeline(FunctionTransformer(np.log1p), StandardScaler(), KNeighborsClassifier(n_neighbors=15))
+ada = AdaBoostClassifier(n_estimators=400, random_state=SEED)
+members = [("lr", lr), ("knn", knn), ("tree", tree)]   # members of voting and stacking in Parts 3-4</code></pre>
+  <p>Pass <code>AdaBoostClassifier</code> exactly the arguments shown; in particular, no <code>algorithm=</code>.</p>
+  <div class="callout warn">
+    On an Apple Silicon Mac, <code>scikit-learn</code> may print <code>RuntimeWarning: divide by zero / overflow / invalid value
+    encountered in matmul</code> when it fits <code>LogisticRegression</code>. This is the display-only quirk of NumPy's
+    Accelerate BLAS backend described in Task 2; it does not change your results. Do not suppress warnings globally —
+    that would also hide warnings that <em>do</em> mean something.
+  </div>
+
+  <h3>How numbers are reported</h3>
+  <ul>
+    <li><strong>Score.</strong> Accuracy, unless a step names another metric. <strong>Mean ± std</strong> is the mean and the
+    standard deviation (<code>np.std</code>, default <code>ddof=0</code>) over the five folds of <code>cv</code>, or over the five
+    noise draws in Part 5.</li>
+    <li><strong>Paired fold difference.</strong> For models A and B, fold by fold, the score of A minus the score of B on the
+    same fold. Report the five numbers, their mean and their standard deviation.</li>
+    <li><strong>Inside the fold spread.</strong> In this task, a difference between two models is inside the fold spread when
+    the absolute value of the mean of its paired differences is not larger than the standard deviation of those paired
+    differences (<code>np.std</code>, <code>ddof=0</code>, as above). The rule applies in every Part. You may not name a winner
+    on a difference inside the spread; you may say that your data cannot separate the
+    two. In Part 5 the rule applies to the paired difference of two models' losses over the five noise draws (pair them by
+    draw).</li>
+    <li><strong>The test split.</strong> Everything that chooses something — a threshold, a number of rounds, the best member —
+    is decided on the training split (and <code>cv</code>) only. The test split is used to report, in the steps that say so.</li>
+  </ul>
+
+  <h3>The three functions</h3>
+  <div class="callout note">
+    You write three functions from scratch: <code>oob_mask</code> (Part 1), <code>hard_vote</code> (Part 3) and
+    <code>adaboost_step</code> (Part 5). Each one must:
+    <ul>
+      <li>be a top-level <code>def</code> in the notebook (not imported from a file), with exactly this name and exactly
+      these parameter names; it may be called with keyword arguments;</li>
+      <li>use only NumPy and the <code>math</code> module (the usual <code>import numpy as np</code> and
+      <code>import math</code>, in a cell above it or inside the function, are fine) — no scikit-learn or pandas inside it — and nothing else defined in
+      your notebook: no <code>X_train</code>, <code>SEED</code>, <code>cv</code> or any other global;</li>
+      <li>leave its arguments unmodified (work on copies if you change anything);</li>
+      <li>carry a short docstring;</li>
+      <li>return exactly the type and shape stated, and follow the rules literally, edge cases included. The examples under
+      each function are part of its rules.</li>
+    </ul>
+    Put each function in its own code cell, directly under the heading of the part where it is introduced.
+  </div>
+
+  <h2><span class="step-no">1</span>Bagging and out-of-bag estimates<span class="pts">5 pts</span></h2>
+  <p>A bootstrap sample draws <i>n</i> rows from <i>n</i> with replacement. A row that a tree never saw is
+  <strong>out of bag</strong> (OOB) for that tree. Here you rebuild scikit-learn's OOB estimate yourself, compare
+  bagged learners with the learners they are made of, and compare three estimates of the same forest.</p>
+  <pre class="run"><code>def oob_mask(sample_indices, n_samples):
+    """Boolean mask of the rows that do NOT occur in sample_indices."""
+    raise NotImplementedError</code></pre>
+  <p>Rules for <code>oob_mask</code>:</p>
+  <ul>
+    <li><code>sample_indices</code> is a list or a one-dimensional integer array of row numbers between 0 and
+    <code>n_samples - 1</code>. Numbers may repeat; the list may be empty. <code>n_samples</code> is an integer.</li>
+    <li>It returns a NumPy boolean array of shape <code>(n_samples,)</code>. Element <code>i</code> is <code>True</code> exactly
+    when <code>i</code> does not occur in <code>sample_indices</code>.</li>
+  </ul>
+  <table>
+    <thead><tr><th>Call</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td><code>oob_mask([0, 2, 2], 5)</code></td><td><code>[False, True, False, True, True]</code></td></tr>
+      <tr><td><code>oob_mask([], 3)</code></td><td><code>[True, True, True]</code></td></tr>
+      <tr><td><code>oob_mask(np.array([3, 0]), 4)</code></td><td><code>[False, True, True, False]</code></td></tr>
+    </tbody>
+  </table>
+  <p>Fit the bagged trees on the training split with <code>bag.fit(X_train, y_train)</code>. Then
+  <code>bag.estimators_samples_[k]</code> holds the row numbers (of <code>X_train</code>) that tree <code>k</code> was trained
+  on, and <code>bag.estimators_[k]</code> is that tree.</p>
+  <ol>
+    <li><strong>Out-of-bag share.</strong> With <code>oob_mask</code>, compute for every tree the share of training rows that are
+    out of bag for it, and take the mean over the 100 trees. Let <i>n</i> be the number of training rows. A given row is
+    drawn at least once in <i>n</i> draws with replacement with probability 1 − (1 − 1/<i>n</i>)<sup><i>n</i></sup>, and not drawn at
+    all with probability (1 − 1/<i>n</i>)<sup><i>n</i></sup>. Print your mean out-of-bag share, your mean in-bag share (one
+    minus the first), and both formula values.</li>
+    <li><strong>Out-of-bag accuracy by hand.</strong> For every training row, collect votes only from the trees for which that
+    row is out of bag: for each tree, predict the rows where <code>oob_mask</code> is <code>True</code> and add one vote for the
+    predicted class to a counter of shape <code>(n, 2)</code>. A row's out-of-bag prediction is the class with more votes (a
+    tie goes to class 0, which is what <code>np.argmax</code> does). Your out-of-bag accuracy is the share of training rows whose
+    out-of-bag prediction equals the true label. Print it next to <code>bag.oob_score_</code>.</li>
+    <li><strong>Five models on the same folds.</strong> For <code>tree</code>, <code>bag</code>, <code>rf</code>, <code>lr</code>
+    and <code>bag_lr</code>, compute the accuracy on each of the five folds of <code>cv</code> on the training split:
+      <pre><code>from sklearn.model_selection import cross_validate
+
+scores = cross_validate(model, X_train, y_train, cv=cv, scoring="accuracy")["test_score"]</code></pre>
+    Tabulate the five fold scores, the mean and the std of each model. Then report the paired fold differences
+    <code>bag</code> − <code>tree</code>, <code>rf</code> − <code>tree</code> and <code>bag_lr</code> − <code>lr</code>.</li>
+    <li><strong>One forest, three estimates.</strong> Fit <code>rf</code> on the full training split. Report its
+    <code>oob_score_</code>, its cross-validation mean from step 3, and its accuracy <i>p</i> on the test split with the
+    standard error √(<i>p</i>(1 − <i>p</i>)/<i>n</i><sub>test</sub>).</li>
+  </ol>
+  <div class="callout report">
+    The out-of-bag shares with the two formula values; your out-of-bag accuracy next to <code>oob_score_</code>; the table of
+    fold scores with the three paired-difference rows; the forest's three numbers. Then in words: (a) for the tree and for
+    logistic regression, did bagging change the cross-validation accuracy? Judge against the paired fold differences, and give
+    the mechanism that explains what you see. (b) Is the forest's out-of-bag score a fair stand-in for its cross-validation
+    score here? Call the two numbers in agreement when the absolute difference between <code>oob_score_</code> and the
+    cross-validation mean is not larger than the standard deviation of the forest's five fold scores, and say how both compare
+    with the test accuracy and its standard error.
+  </div>
+
+  <h2><span class="step-no">2</span>Evaluating the filter: curves, a threshold, importances<span class="pts">4 pts</span></h2>
+  <p>The requirement for the filter: <strong>at most 1 % of legitimate mail may be flagged as spam.</strong> A probability
+  model becomes a filter only once you choose a threshold <i>t</i>; a mail is flagged when its spam probability is
+  <code>&gt;= t</code>. The threshold has to be chosen without looking at the test split.</p>
+  <ol>
+    <li><strong>Curves.</strong> Fit <code>tree</code> and <code>rf</code> on the training split. On the test split, draw the ROC
+    curve and the precision-recall curve of both models, with labelled axes and a legend that gives each model's AUC
+    (<code>roc_auc_score</code>) or average precision (<code>average_precision_score</code>). Use
+    <code>predict_proba(X_test)[:, 1]</code> as the score.</li>
+    <li><strong>A threshold from the training split.</strong> Get out-of-fold spam probabilities of the forest:
+      <pre><code>from sklearn.model_selection import cross_val_predict
+
+oof = cross_val_predict(rf, X_train, y_train, cv=cv, method="predict_proba")[:, 1]</code></pre>
+    Using <code>oof</code> and <code>y_train</code> only (for example with
+    <code>sklearn.metrics.roc_curve(y_train, oof, drop_intermediate=False)</code>, which uses the convention "flagged when
+    score &gt;= threshold" and, with <code>drop_intermediate=False</code>, keeps every candidate threshold), take the threshold
+    with the highest recall among those whose out-of-fold FPR is at most 0.01; if several thresholds reach that recall, take the
+    largest of them. Report <i>t</i>, and the out-of-fold FPR and recall at <i>t</i>. Use the unrounded <i>t</i> in the next
+    step.</li>
+    <li><strong>Apply it once.</strong> Flag the test mails whose forest probability is <code>&gt;= t</code>. Report the confusion
+    matrix (label rows and columns), precision, recall and FPR on the test split, and the number of legitimate test mails that
+    were flagged out of the number of legitimate test mails. You get one try: do not change <i>t</i> after you have seen these
+    numbers.</li>
+    <li><strong>Importances.</strong>
+      <pre><code>from sklearn.inspection import permutation_importance
+
+perm = permutation_importance(rf, X_test, y_test, n_repeats=10, random_state=SEED, scoring="accuracy")</code></pre>
+    Compare <code>perm.importances_mean</code> with <code>rf.feature_importances_</code>: a table of the five highest features
+    of each, with their values. (The permutation importance is computed on the test split; it informs no choice, so it does
+    not use up the "once" of step 3.)</li>
+  </ol>
+  <div class="callout report">
+    The curves with AUC and average precision; <i>t</i> with its out-of-fold FPR and recall; the confusion matrix, precision,
+    recall and FPR on the test split, and the count sentence for legitimate mails; the two top-five tables. Then in words:
+    did the 1 % target hold on the test split? Take one feature that ranks differently in the two importances and explain,
+    from how each importance is computed, why they differ.
+  </div>
+
+  <h2><span class="step-no">3</span>Voting<span class="pts">4 pts</span></h2>
+  <p>A voting ensemble asks several different learners and combines their answers. <strong>Hard</strong> voting takes the
+  majority label; <strong>soft</strong> voting averages the predicted probabilities. Here you write the hard vote yourself.</p>
+  <pre class="run"><code>def hard_vote(predictions, weights=None):
+    """Weighted majority vote of several models' predicted labels, one label per sample."""
+    raise NotImplementedError</code></pre>
+  <p>Rules for <code>hard_vote</code>:</p>
+  <ul>
+    <li><code>predictions</code> is a two-dimensional array-like (a list of lists is fine) of shape
+    <code>(n_models, n_samples)</code> holding non-negative integer class labels. Row <code>m</code> is the predictions of
+    model <code>m</code>. Labels above 1 are allowed.</li>
+    <li><code>weights</code> is <code>None</code> (every model counts 1) or a sequence of <code>n_models</code> non-negative
+    numbers, one per model. Do not normalise them.</li>
+    <li>For one sample, the count of a label is the sum of the weights of the models that predict it; a label that nobody
+    predicts has count 0. The result for that sample is the label with the largest count. <strong>A tie goes to the smallest
+    label.</strong> A count is the sum of the weights in model order (model 0 first), and counts are compared exactly, with no
+    tolerance. (A label nobody predicts can win only if every count is 0,
+    for example when all weights are 0; then the result is 0.)</li>
+    <li>It returns a NumPy integer array of shape <code>(n_samples,)</code>.</li>
+  </ul>
+  <table>
+    <thead><tr><th>Call</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td><code>hard_vote([[0, 1, 1], [0, 1, 0], [1, 1, 0]])</code></td><td><code>[0, 1, 0]</code></td></tr>
+      <tr><td><code>hard_vote([[0, 1], [1, 0]])</code> (two models, a tie in both columns)</td><td><code>[0, 0]</code></td></tr>
+      <tr><td><code>hard_vote([[0, 1], [1, 0]], weights=[1, 2])</code></td><td><code>[1, 0]</code></td></tr>
+      <tr><td><code>hard_vote([[2, 0], [2, 1], [0, 1]])</code> (labels above 1)</td><td><code>[2, 1]</code></td></tr>
+    </tbody>
+  </table>
+  <ol>
+    <li><strong>Reproduce scikit-learn.</strong> Fit the three <code>members</code> on the training split and stack their predicted
+    test labels into an array of shape <code>(3, n_test)</code>. Pass it to <code>hard_vote</code> and compare with
+    <code>VotingClassifier(members, voting="hard").fit(X_train, y_train).predict(X_test)</code>. Report the fraction of test
+    rows on which the two agree.</li>
+    <li><strong>Disagreement.</strong> For each pair of members, the fraction of test rows on which their predicted labels
+    differ. Report the three numbers as a table.</li>
+    <li><strong>Cross-validation.</strong> On the training split and <code>cv</code>, report the fold scores, mean and std of
+    <code>lr</code>, <code>knn</code>, <code>tree</code>, of <code>VotingClassifier(members, voting="hard")</code> and of
+    <code>VotingClassifier(members, voting="soft")</code>. The <strong>best member</strong> is the one of the three members with the
+    highest cross-validation mean. Report the paired fold differences hard − best member and soft − best member.</li>
+  </ol>
+  <div class="callout report">
+    The agreement fraction, the disagreement table, the cross-validation table and the two paired-difference rows. Then in
+    words, for hard voting and for soft voting separately: does it beat the best member? Apply the "inside the fold spread"
+    rule; declare no winner on a difference inside the spread.
+  </div>
+
+  <h2><span class="step-no">4</span>Stacking<span class="pts">4 pts</span></h2>
+  <p>Stacking feeds the members' predicted probabilities into a meta-learner that learns how much to trust each member. Which
+  predictions you feed it matters. You build it by hand first, then check it against scikit-learn.</p>
+  <ol>
+    <li><strong>Out-of-fold stacking by hand.</strong> For each member in <code>members</code> (in that order), get
+    <code>cross_val_predict(member, X_train, y_train, cv=cv, method="predict_proba")[:, 1]</code>, the out-of-fold probability of
+    spam. Put the three columns side by side: a matrix of shape <code>(n_train, 3)</code>. Fit the meta-learner
+    <code>LogisticRegression()</code> (default settings) on that matrix and <code>y_train</code>. To predict the test split, fit each
+    member on the full training split, build the matrix of their <code>predict_proba(X_test)[:, 1]</code> and apply the meta-learner.
+    Compare with
+      <pre><code>from sklearn.ensemble import StackingClassifier
+
+stack = StackingClassifier(members, LogisticRegression(), cv=cv).fit(X_train, y_train)</code></pre>
+    using <code>stack.final_estimator_.coef_</code>, <code>stack.predict(X_test)</code> and <code>stack.score(X_test, y_test)</code>.
+    Report the largest absolute difference between the two coefficient vectors, whether the two test predictions are identical,
+    and the two test accuracies.</li>
+    <li><strong>Naive stacking.</strong> Build the same matrix but with probabilities for the training rows from members fitted
+    on those same rows (<code>clone(member).fit(X_train, y_train).predict_proba(X_train)[:, 1]</code>), and fit a second
+    <code>LogisticRegression()</code> on it. Report a table of the meta-learner coefficients: one row per member, one column for
+    the naive fit and one for the out-of-fold fit.</li>
+    <li><strong>Cross-validation.</strong> On the training split and <code>cv</code>, report the fold scores, mean and std of
+    <code>stack</code> (<code>StackingClassifier</code> then runs its own five-fold split inside every training fold; that is
+    intended), of soft voting and of the best member from Part 3. Report the paired fold differences stack − best member and
+    stack − soft voting.</li>
+  </ol>
+  <div class="callout report">
+    The comparison with <code>StackingClassifier</code> (coefficients, predictions, accuracies), the coefficient table, the
+    cross-validation table and the two paired-difference rows. Then in words: (a) say how the tree's weight differs between the
+    naive and the out-of-fold fit and explain why. (b) Does stacking beat the best member, and does it beat soft voting? Apply
+    the "inside the fold spread" rule; declare no winner on a difference inside the spread.
+  </div>
+
+  <h2><span class="step-no">5</span>AdaBoost and label noise<span class="pts">6 pts</span></h2>
+  <p>AdaBoost fits weak learners in sequence; after each one it raises the weights of the rows that learner got wrong. You
+  write one round of that update, use it to check scikit-learn and to inspect the weights a booster ends with when some labels
+  are wrong, and measure how three models cope with wrong labels.</p>
+  <pre class="run"><code>def adaboost_step(y_true, y_pred, weights):
+    """One AdaBoost round: return (alpha, new_weights) for a learner's predictions and the current row weights."""
+    raise NotImplementedError</code></pre>
+  <p>Rules for <code>adaboost_step</code>:</p>
+  <ul>
+    <li><code>y_true</code> and <code>y_pred</code> are one-dimensional arrays (or lists) of <i>n</i> labels. Labels are compared
+    only for equality, so 0/1 and −1/+1 both work. A row is <em>wrong</em> when <code>y_pred != y_true</code>.
+    <code>weights</code> is a one-dimensional array of <i>n</i> non-negative numbers with a positive sum; it does not have to sum
+    to 1.</li>
+    <li>ε = (sum of the weights of the wrong rows) / (sum of all weights). α = ln((1 − ε)/ε), the natural logarithm.</li>
+    <li>New weights: the weight of every wrong row is multiplied by e<sup>α</sup>, the weight of every right row is left as it is,
+    and then all weights are divided by their sum, so that the new weights sum to 1.</li>
+    <li>It returns the tuple <code>(alpha, new_weights)</code>: <code>alpha</code> is a float; <code>new_weights</code> is a new
+    NumPy float array of shape <code>(n,)</code>.</li>
+    <li><strong>ε = 0</strong> (no row with positive weight is wrong): return <code>(math.inf, weights / weights.sum())</code>. The
+    weights are only normalised.</li>
+    <li><strong>ε ≥ 0.5:</strong> apply the formulas as written. α is then 0 or negative, and the wrong rows are multiplied by a factor
+    of at most 1. The function does not stop, raise, clip or warn. (ε = 1, every row with positive weight wrong, does not occur in
+    this task.)</li>
+  </ul>
+  <table>
+    <thead><tr><th>Call</th><th>ε</th><th>alpha</th><th>new_weights</th></tr></thead>
+    <tbody>
+      <tr><td><code>adaboost_step([1, 1, 0, 0], [1, 0, 0, 0], [1, 1, 1, 1])</code></td><td>1/4</td><td>ln 3 ≈ 1.0986</td><td>1/6, 1/2, 1/6, 1/6</td></tr>
+      <tr><td><code>adaboost_step([1, 1, 1, 0], [0, 0, 0, 0], [1, 1, 1, 1])</code></td><td>3/4</td><td>−ln 3 ≈ −1.0986</td><td>1/6, 1/6, 1/6, 1/2</td></tr>
+      <tr><td><code>adaboost_step([1, 0], [0, 0], [1, 1])</code></td><td>1/2</td><td>0.0</td><td>0.5, 0.5</td></tr>
+      <tr><td><code>adaboost_step([1, 0, 1], [1, 0, 1], [2, 2, 4])</code></td><td>0</td><td><code>math.inf</code></td><td>0.25, 0.25, 0.5</td></tr>
+      <tr><td><code>adaboost_step([-1, 1, 1, -1], [-1, 1, -1, -1], [0.1, 0.2, 0.1, 0.1])</code></td><td>1/5</td><td>ln 4 ≈ 1.3863</td><td>0.125, 0.25, 0.5, 0.125</td></tr>
+    </tbody>
+  </table>
+  <p>Results agree with the table up to floating-point rounding.</p>
+  <ol>
+    <li><strong>The lecture's three rounds.</strong> The "Toy example: three stumps" slide of the Week 8 lecture has ten rows with
+    <i>x</i> = 1, …, 10 and these labels (1 = "+", 0 = "−"). Start with weight 0.1 on every row, call <code>adaboost_step</code>
+    for stump 1, feed the returned weights into the call for stump 2, and again for stump 3.
+      <pre><code>x       = np.arange(1, 11)
+y_toy   = np.array([1, 1, 1, 0, 0, 0, 1, 1, 1, 0])
+stump_1 = np.where(x &lt;= 3.5, 1, 0)      # 1 if x &lt;= 3.5, else 0
+stump_2 = np.where(x &lt;= 9.5, 1, 0)      # 1 if x &lt;= 9.5, else 0
+stump_3 = np.where(x &lt;= 6.5, 0, 1)      # 0 if x &lt;= 6.5, else 1</code></pre>
+    For each round print ε (computed from the weights and the wrong rows), α and the new weights, and compare them with the
+    slide. Round 1 should give ε = 0.3, α = 0.847, and weights 0.071 on the right rows and 0.167 on the wrong rows.</li>
+    <li><strong>Check scikit-learn.</strong> Fit <code>ada</code> on the training split. Start with weight 1/<i>n</i> on every
+    training row. For each of the first five stumps <code>ada.estimators_[t]</code> (<code>t</code> = 0, …, 4), predict the
+    training rows, compute ε yourself from the current weights, call <code>adaboost_step</code> with the training labels, and feed
+    the returned weights into the next round. Compare α with <code>ada.estimator_weights_[t]</code> and ε with
+    <code>ada.estimator_errors_[t]</code>; report the largest absolute difference of each over the five rounds.</li>
+    <li><strong>Error by round.</strong> <code>ada.staged_score(X, y)</code> yields the accuracy of the ensemble after 1, 2, … stumps
+    (wrap it in <code>list(...)</code>). Draw the training error and the test error (1 − accuracy) against the number of rounds
+    for all 400 rounds, with labelled axes and a legend.</li>
+    <li><strong>How many rounds?</strong> Choose the number of rounds on the training split only. For each of the five folds of
+    <code>cv</code>, fit a fresh copy of <code>ada</code> on the fold's training rows, take <code>staged_score</code> on the fold's
+    validation rows (400 values), and average the five curves. The chosen number of rounds is the round with the highest mean
+    accuracy (the smallest such round if several tie). Mark it on the plot of step 3. Report the test error at your chosen round,
+    the round at which the test curve is lowest (the smallest such round if several tie) with the test error there, and whether
+    the two test errors differ by more than the standard error √(<i>p</i>(1 − <i>p</i>)/<i>n</i><sub>test</sub>) of the test
+    accuracy <i>p</i> at your chosen round. The test split plays no part in
+    choosing the number of rounds.</li>
+    <li><strong>Label noise.</strong> Wrong labels are simulated with this helper:
+      <pre class="run"><code>def flip_labels(y, rate, seed):
+    rng = np.random.default_rng(seed)
+    idx = rng.choice(len(y), size=round(rate * len(y)), replace=False)
+    y_noisy = y.copy()
+    y_noisy[idx] = 1 - y_noisy[idx]
+    return y_noisy, idx</code></pre>
+    For draw <code>r</code> = 0, 1, 2, 3, 4 compute <code>y_noisy, idx = flip_labels(y_train, 0.20, SEED + r)</code>, fit on
+    <code>(X_train, y_noisy)</code> and score on the <strong>clean</strong> test labels. Only training labels are flipped. The three
+    models are <code>tree</code>, <code>rf</code> and <code>AdaBoostClassifier(n_estimators=200, random_state=SEED)</code> (call it
+    <code>ada200</code>; it is not the 400-round <code>ada</code>). Fit each model once on the clean labels as well (0 % noise).
+    Tabulate, per model: the test accuracy at 0 %, the test accuracy at 20 % (mean ± std over the five draws), and the loss = clean
+    accuracy − noisy accuracy (mean ± std over the five draws, and the five losses themselves).</li>
+    <li><strong>The final weights.</strong> For each draw, after fitting <code>ada200</code> on <code>y_noisy</code>: start with
+    weight 1/<i>n</i> on every training row and loop over <em>all</em> of <code>ada200.estimators_</code> (whatever their number),
+    calling <code>adaboost_step(y_noisy, stump.predict(X_train), w)</code> and keeping the returned weights as the new <code>w</code>.
+    The share of weight on the flipped rows is <code>w[idx].sum()</code> for the final <code>w</code>. Report it for every draw, with
+    mean ± std, next to the share the flipped rows held before the first round (<code>len(idx) / len(y_train)</code>).</li>
+  </ol>
+  <div class="callout report">
+    The three-round comparison with the lecture; the largest differences from scikit-learn; the plot with the chosen round marked
+    and the numbers of step 4; the noise table and the weight shares. Then in words: (a) how does the number of rounds chosen on the
+    training folds compare with the best round on the test curve? (b) Which of the three models loses the most test accuracy from
+    0 % to 20 % noise? Compare the mean losses with the spread over the five draws (all three models see the same flipped rows within
+    a draw, so you can pair their losses by draw), say whether the ordering you see is larger than that spread, and give the mechanism
+    you think explains it, supported by your own numbers.
+  </div>
+
+  <h2><span class="step-no">6</span>Recommendation and reproducibility<span class="pts">2 pts</span></h2>
+  <ol>
+    <li><strong>Recommendation.</strong> In at most six sentences, recommend a model for this spam filter. Give the threshold and the
+    numbers from your notebook that the recommendation rests on, and say which of the differences you looked at lie inside the noise
+    and therefore do not support a choice. The fold scores of Parts 1, 3 and 4 use the same folds, so paired differences between any
+    two candidates are available. If you recommend a model other than the forest, say how its threshold would be set; do not
+    evaluate it on the test split.</li>
+    <li><strong>Reproducibility.</strong> The first cell prints the library versions, your <code>SEED</code> is written in a markdown
+    cell, the notebook runs from top to bottom without errors after <em>Restart &amp; Run All</em>, and your repository has at least
+    three commits.</li>
+  </ol>
+
+  <h2>What to submit</h2>
+  <p>Submit <strong>one link</strong> to <strong>Task 4 · Random Forests &amp; Ensembles</strong> in Canvas: the URL of the
+  <em>final commit</em> in your GitHub repository, for example
+  <code>https://github.com/your-username/your-repo/commit/&lt;sha&gt;</code>. The Canvas assignment takes a Website URL, not a file.
+  The repository must contain, at that commit:</p>
+  <table>
+    <thead><tr><th>File</th><th>Requirement</th></tr></thead>
+    <tbody>
+      <tr><td><code>lastname_task4.ipynb</code></td><td>Executed with <em>Restart &amp; Run All</em>, outputs visible, a heading for each of Part 1 … Part 6.</td></tr>
+      <tr><td><code>requirements.txt</code></td><td>As in the starter, versions unchanged.</td></tr>
+      <tr><td><code>data/spambase.csv</code></td><td>As in the starter, not modified.</td></tr>
+    </tbody>
+  </table>
+  <p>Do not commit the virtual-environment folder (the <code>.gitignore</code> from the starter excludes it). Every "Report in your
+  notebook" item above must be visible in the notebook, as printed output, a plot or a markdown cell. A notebook committed without its
+  outputs is graded on what it shows and loses the reproducibility point.</p>
+
+  <h3>Put your project on GitHub</h3>
+  <ol>
+    <li>On github.com create a new <strong>empty</strong> repository: no README, no
+    <code>.gitignore</code>, no licence, because you already have your own history. Private is fine.</li>
+    <li>If it is private: <em>Settings → Collaborators → Add people</em>, and add
+    <code>unreal-kz</code> <strong>before the deadline</strong>. Without that the instructor sees a
+    404 and cannot grade the task.</li>
+    <li>Connect your local repository and push it:
+      <pre><code>git remote add origin https://github.com/your-username/your-repo.git
+git push -u origin main</code></pre>
+    </li>
+    <li>After your last commit run <code>git push</code>, open the repository on GitHub, click the
+    latest commit, and copy the URL from the address bar. Paste it into the Website URL box of the
+    Canvas assignment.</li>
+  </ol>
+  <div class="callout note">
+    Submit the commit link, not just the repository address: it fixes exactly what your work looked
+    like at that commit. Commits pushed after the deadline are not graded. Make at least three commits as you go.
+  </div>
+
+  <h2>Grading — 25 points</h2>
+  <table>
+    <thead><tr><th>Part</th><th>Pts</th><th>Full marks require</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Bagging &amp; OOB</td><td>5</td><td><code>oob_mask</code> follows the rules in Part 1 (1); the mean out-of-bag share per tree compared with (1 − 1/n)^n, and your own out-of-bag accuracy equal to <code>oob_score_</code> (1); CV table for the five models on the same folds (1); whether bagging helps each of the two base models (the tree and logistic regression), supported by the paired fold differences (1); the forest's <code>oob_score_</code> compared with its CV mean and with its test accuracy and standard error (1)</td></tr>
+      <tr><td>2 · Evaluation</td><td>4</td><td>ROC and precision-recall curves of the tree and the forest on the test split, labelled, with AUC and average precision (1); a threshold chosen on out-of-fold probabilities of the training split for a false-positive rate of at most 1 %, applied once to the test split with the confusion matrix, precision, recall and false-positive rate, and whether the 1 % target held (2); permutation and impurity importances, top five each, with one difference explained (1)</td></tr>
+      <tr><td>3 · Voting</td><td>4</td><td><code>hard_vote</code> follows the rules in Part 3 (1); <code>hard_vote</code> reproduces <code>VotingClassifier(voting="hard")</code> on the test split, and the pairwise disagreement table is reported (1); CV table for the three members, hard and soft voting on the same folds, with a conclusion against the best member that declares no winner on a difference inside the fold spread (2)</td></tr>
+      <tr><td>4 · Stacking</td><td>4</td><td>your own out-of-fold stacking reproduces <code>StackingClassifier</code> (meta-learner weights and test accuracy) (1); the meta-learner weights with in-sample and with out-of-fold predictions compared, and the change in the tree's weight explained (1); CV comparison of stacking, soft voting and the best member on the same folds, with a conclusion that declares no winner on a difference inside the fold spread (2)</td></tr>
+      <tr><td>5 · AdaBoost &amp; noise</td><td>6</td><td><code>adaboost_step</code> follows the rules in Part 5 (1); <code>adaboost_step</code> reproduces the lecture's three-round example and scikit-learn's <code>estimator_weights_</code> for the first five rounds (1); labelled plot of training and test error by round, with the number of rounds chosen on the training folds, not on the test split, and compared with the test curve (2); the label-noise table for the tree, the forest and AdaBoost at 0 % and 20 % noise over five draws, with the share of AdaBoost's weight on the flipped rows (1); a conclusion on which model loses most to label noise that uses the spread over the draws and explains the mechanism (1)</td></tr>
+      <tr><td>6 · Conclusion &amp; reproducibility</td><td>2</td><td>a recommendation for the spam filter in at most six sentences, with the threshold and the numbers it rests on, and what is inside the noise (1); versions printed, <code>SEED</code> stated, notebook runs top to bottom, the executed notebook, <code>requirements.txt</code> and <code>data/spambase.csv</code> are in the repository at the submitted commit, at least three commits (1)</td></tr>
+    </tbody>
+    <tfoot><tr><td>Total</td><td>25</td><td>&nbsp;</td></tr></tfoot>
+  </table>
+
+  <footer>
+    MOP 3231 · Machine Learning (Python) — Narxoz University ·
+    4 contact + 6 SSS + 2 SSSL hours ·
+    Instructor contact: baubek.ukibassov@narxoz.kz
+  </footer>
+
+</div>
+</body>
+</html>
